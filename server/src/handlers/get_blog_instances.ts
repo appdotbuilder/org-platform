@@ -1,8 +1,18 @@
+import { db } from '../db';
+import { blogInstancesTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import { type BlogInstance } from '../schema';
 
-export async function getBlogInstances(organizationId: number): Promise<BlogInstance[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all blog instances for a specific organization.
-    // This enables multi-blog functionality within each organization.
-    return [];
-}
+export const getBlogInstances = async (organizationId: number): Promise<BlogInstance[]> => {
+  try {
+    const results = await db.select()
+      .from(blogInstancesTable)
+      .where(eq(blogInstancesTable.organization_id, organizationId))
+      .execute();
+
+    return results;
+  } catch (error) {
+    console.error('Failed to get blog instances:', error);
+    throw error;
+  }
+};

@@ -1,8 +1,22 @@
+import { db } from '../db';
+import { blogPostsTable } from '../db/schema';
+import { eq, desc } from 'drizzle-orm';
 import { type BlogPost } from '../schema';
 
-export async function getBlogPosts(blogInstanceId: number): Promise<BlogPost[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all blog posts for a specific blog instance.
-    // Should respect visibility settings and user permissions.
-    return [];
-}
+export const getBlogPosts = async (blogInstanceId: number): Promise<BlogPost[]> => {
+  try {
+    // Fetch all blog posts for the specified blog instance
+    // Order by created_at descending (newest first)
+    const results = await db.select()
+      .from(blogPostsTable)
+      .where(eq(blogPostsTable.blog_instance_id, blogInstanceId))
+      .orderBy(desc(blogPostsTable.created_at))
+      .execute();
+
+    // Return the results - no numeric conversions needed as all fields are integers, text, or timestamps
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch blog posts:', error);
+    throw error;
+  }
+};

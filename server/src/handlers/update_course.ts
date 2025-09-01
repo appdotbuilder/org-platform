@@ -1,19 +1,55 @@
+import { db } from '../db';
+import { coursesTable } from '../db/schema';
 import { type UpdateCourseInput, type Course } from '../schema';
+import { eq } from 'drizzle-orm';
 
-export async function updateCourse(input: UpdateCourseInput): Promise<Course> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is updating an existing course with provided fields.
-    // Should validate permissions and course ownership before updating.
-    return Promise.resolve({
-        id: input.id,
-        lms_instance_id: 0, // Will be fetched from existing course
-        title: input.title || 'Existing Title',
-        slug: input.slug || 'existing-slug',
-        description: input.description !== undefined ? input.description : null,
-        content: input.content !== undefined ? input.content : null,
-        visibility: input.visibility || 'public',
-        created_by: 0, // Will be fetched from existing course
-        created_at: new Date(), // Will be fetched from existing course
-        updated_at: new Date()
-    } as Course);
-}
+export const updateCourse = async (input: UpdateCourseInput): Promise<Course> => {
+  try {
+    // First, check if the course exists
+    const existingCourses = await db.select()
+      .from(coursesTable)
+      .where(eq(coursesTable.id, input.id))
+      .execute();
+
+    if (existingCourses.length === 0) {
+      throw new Error('Course not found');
+    }
+
+    // Build the update object with only the fields that are provided
+    const updateData: Partial<typeof coursesTable.$inferInsert> = {
+      updated_at: new Date()
+    };
+
+    if (input.title !== undefined) {
+      updateData.title = input.title;
+    }
+
+    if (input.slug !== undefined) {
+      updateData.slug = input.slug;
+    }
+
+    if (input.description !== undefined) {
+      updateData.description = input.description;
+    }
+
+    if (input.content !== undefined) {
+      updateData.content = input.content;
+    }
+
+    if (input.visibility !== undefined) {
+      updateData.visibility = input.visibility;
+    }
+
+    // Update the course record
+    const result = await db.update(coursesTable)
+      .set(updateData)
+      .where(eq(coursesTable.id, input.id))
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Course update failed:', error);
+    throw error;
+  }
+};

@@ -1,8 +1,18 @@
+import { db } from '../db';
+import { lmsInstancesTable } from '../db/schema';
 import { type LmsInstance } from '../schema';
+import { eq } from 'drizzle-orm';
 
-export async function getLmsInstances(organizationId: number): Promise<LmsInstance[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all LMS instances for a specific organization.
-    // This enables multi-LMS functionality within each organization.
-    return [];
-}
+export const getLmsInstances = async (organizationId: number): Promise<LmsInstance[]> => {
+  try {
+    const results = await db.select()
+      .from(lmsInstancesTable)
+      .where(eq(lmsInstancesTable.organization_id, organizationId))
+      .execute();
+
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch LMS instances:', error);
+    throw error;
+  }
+};

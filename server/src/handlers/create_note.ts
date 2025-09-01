@@ -1,17 +1,24 @@
+import { db } from '../db';
+import { notesTable } from '../db/schema';
 import { type CreateNoteInput, type Note } from '../schema';
 
-export async function createNote(input: CreateNoteInput): Promise<Note> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new note within an organization.
-    // Notes can be placed in folders or at the root level (folder_id = null).
-    return Promise.resolve({
-        id: 0, // Placeholder ID
-        folder_id: input.folder_id || null,
+export const createNote = async (input: CreateNoteInput): Promise<Note> => {
+  try {
+    // Insert note record
+    const result = await db.insert(notesTable)
+      .values({
+        folder_id: input.folder_id,
         organization_id: input.organization_id,
         title: input.title,
-        content: input.content || null,
-        created_by: input.created_by,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as Note);
-}
+        content: input.content,
+        created_by: input.created_by
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Note creation failed:', error);
+    throw error;
+  }
+};

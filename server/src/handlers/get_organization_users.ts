@@ -1,8 +1,19 @@
+import { db } from '../db';
+import { organizationUsersTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import { type OrganizationUser } from '../schema';
 
-export async function getOrganizationUsers(organizationId: number): Promise<OrganizationUser[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all users belonging to a specific organization.
-    // This supports team management by showing all team members and their roles.
-    return [];
-}
+export const getOrganizationUsers = async (organizationId: number): Promise<OrganizationUser[]> => {
+  try {
+    // Fetch all users belonging to the specified organization
+    const results = await db.select()
+      .from(organizationUsersTable)
+      .where(eq(organizationUsersTable.organization_id, organizationId))
+      .execute();
+
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch organization users:', error);
+    throw error;
+  }
+};

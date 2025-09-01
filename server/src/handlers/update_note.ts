@@ -1,17 +1,48 @@
+import { db } from '../db';
+import { notesTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import { type UpdateNoteInput, type Note } from '../schema';
 
-export async function updateNote(input: UpdateNoteInput): Promise<Note> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is updating an existing note with provided fields.
-    // Should validate permissions and note ownership before updating.
-    return Promise.resolve({
-        id: input.id,
-        folder_id: input.folder_id !== undefined ? input.folder_id : null,
-        organization_id: 0, // Will be fetched from existing note
-        title: input.title || 'Existing Title',
-        content: input.content !== undefined ? input.content : null,
-        created_by: 0, // Will be fetched from existing note
-        created_at: new Date(), // Will be fetched from existing note
-        updated_at: new Date()
-    } as Note);
-}
+export const updateNote = async (input: UpdateNoteInput): Promise<Note> => {
+  try {
+    // First, check if the note exists
+    const existingNote = await db.select()
+      .from(notesTable)
+      .where(eq(notesTable.id, input.id))
+      .execute();
+
+    if (existingNote.length === 0) {
+      throw new Error(`Note with id ${input.id} not found`);
+    }
+
+    // Build update object with only provided fields
+    const updateData: Partial<typeof notesTable.$inferInsert> = {};
+    
+    if (input.folder_id !== undefined) {
+      updateData.folder_id = input.folder_id;
+    }
+    
+    if (input.title !== undefined) {
+      updateData.title = input.title;
+    }
+    
+    if (input.content !== undefined) {
+      updateData.content = input.content;
+    }
+
+    // Always update the updated_at timestamp
+    updateData.updated_at = new Date();
+
+    // Update the note
+    const result = await db.update(notesTable)
+      .set(updateData)
+      .where(eq(notesTable.id, input.id))
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Note update failed:', error);
+    throw error;
+  }
+};
